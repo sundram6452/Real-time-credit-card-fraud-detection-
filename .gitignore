@@ -1,0 +1,35 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Data files (keep raw large CSV and processed data out of git tracking)
+data/raw/*.csv
+data/processed/*.csv
+*.db
+*.sqlite
+*.sqlite3
+
+# Models (keep serialized binaries out or use Git LFS)
+models/*.pkl
+
+# Virtual environments
+.env
+venv/
+env/
+ENV/
+.venv/
+
+# Pytest / Coverage
+.pytest_cache/
+.coverage
+htmlcov/
+
+# IDE & Editor
+.vscode/
+.idea/
+*.swp
+.DS_Store
+
+# Jupyter Notebook Checkpoints
+.ipynb_checkpoints/

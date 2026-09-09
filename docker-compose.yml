@@ -1,0 +1,95 @@
+version: '3.8'
+
+services:
+  # 1. Relational Database (PostgreSQL)
+  db:
+    image: postgres:15-alpine
+    container_name: fraud_postgres_db
+    environment:
+      POSTGRES_USER: fraud_user
+      POSTGRES_PASSWORD: fraud_password
+      POSTGRES_DB: fraud_detection
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./sql/schema.sql:/docker-entrypoint-initdb.d/schema.sql
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U fraud_user -d fraud_detection"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # 2. Apache Zookeeper (Kafka Coordination)
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.4.0
+    container_name: fraud_zookeeper
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    ports:
+      - "2181:2181"
+
+  # 3. Apache Kafka Message Broker
+  kafka:
+    image: confluentinc/cp-kafka:7.4.0
+    container_name: fraud_kafka_broker
+    depends_on:
+      - zookeeper
+    ports:
+      - "9092:9092"
+      - "29092:29092"
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,PLAINTEXT_HOST://localhost:29092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+
+  # 4. Streamlit Interactive Dashboard
+  dashboard:
+    build: .
+    container_name: fraud_dashboard
+    ports:
+      - "8501:8501"
+    environment:
+      - DATABASE_URL=postgresql://fraud_user:fraud_password@db:5432/fraud_detection
+      - USE_KAFKA=true
+      - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
+      - KAFKA_TOPIC=transactions_stream
+      - FRAUD_THRESHOLD=0.30
+    depends_on:
+      db:
+        condition: service_healthy
+      kafka:
+        condition: service_started
+    volumes:
+      - ./data:/app/data
+      - ./models:/app/models
+    restart: on-failure
+
+  # 5. Background Real-Time Inference Consumer
+  consumer:
+    build: .
+    container_name: fraud_consumer_service
+    command: python -m src.streaming.consumer
+    environment:
+      - DATABASE_URL=postgresql://fraud_user:fraud_password@db:5432/fraud_detection
+      - USE_KAFKA=true
+      - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
+      - KAFKA_TOPIC=transactions_stream
+      - FRAUD_THRESHOLD=0.30
+    depends_on:
+      db:
+        condition: service_healthy
+      kafka:
+        condition: service_started
+    volumes:
+      - ./models:/app/models
+    restart: on-failure
+
+volumes:
+  pgdata:

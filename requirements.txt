@@ -1,0 +1,26 @@
+# Core Data Analysis & Computing
+pandas>=2.0.0
+numpy>=1.24.0
+scipy>=1.10.0
+
+# Machine Learning & Modeling
+scikit-learn>=1.3.0
+joblib>=1.3.0
+
+# Database & ORM
+SQLAlchemy>=2.0.0
+psycopg2-binary>=2.9.9
+
+# Visualization & Dashboard
+matplotlib>=3.7.0
+seaborn>=0.13.0
+plotly>=5.15.0
+streamlit>=1.30.0
+
+# Big Data & Streaming
+pyspark>=3.5.0
+kafka-python>=2.0.2
+
+# Configuration, Testing & Quality
+python-dotenv>=1.0.0
+pytest>=8.0.0
