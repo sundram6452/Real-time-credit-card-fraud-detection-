@@ -168,4 +168,4 @@ def render_transaction_prediction():
             }
         ))
         fig_gauge.update_layout(height=260, margin=dict(l=20, r=20, t=30, b=20))
-        st.plotly_chart(fig_gauge, use_container_width=True)
+        st.plotly_chart(fig_gauge, use_container_width=True, key="single_pred_gauge_chart")
